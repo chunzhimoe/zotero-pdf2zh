@@ -1,0 +1,76 @@
+/* PDF2zh管理后台样式 */
+
+/* 主体样式 */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+}
+
+/* 页脚样式 */
+.footer {
+    margin-top: auto;
+}
+
+/* 卡片阴影效果 */
+.card.shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.3s ease;
+}
+
+.card.shadow:hover {
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+}
+
+/* 表单元素样式 */
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* 按钮悬停效果 */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* 表格样式 */
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 导航栏品牌标识 */
+.navbar-brand {
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* API密钥输入框提示 */
+input[autocomplete="off"]::placeholder {
+    color: #dc3545;
+}
+
+/* 翻译服务手风琴样式 */
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0c63e4;
+}
+
+/* 响应式调整 */
+@media (max-width: 767.98px) {
+    .env-row .btn {
+        margin-top: 10px;
+    }
+}
+
+/* 预格式化文本 */
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}

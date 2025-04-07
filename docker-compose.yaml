@@ -14,6 +14,25 @@ services:
             - TZ=Asia/Shanghai
             - HF_ENDPOINT=https://hf-mirror.com
         volumes:
-            - ./zotero-pdf2zh/translated:/app/translated
-            - ./zotero-pdf2zh/config.json:/app/config.json
-            # - ./zotero-pdf2zh/LXGWWenKai-Regular.ttf:/app/LXGWWenKai-Regular.ttf
+            - ./shared/translated:/app/translated
+            - ./shared/config.json:/app/config.json
+            # - ./shared/LXGWWenKai-Regular.ttf:/app/LXGWWenKai-Regular.ttf
+        depends_on:
+            - config-manager
+
+    config-manager:
+        build:
+            context: .
+            dockerfile: Dockerfile.config-manager
+        container_name: zotero-pdf2zh-config-manager
+        restart: unless-stopped
+        ports:
+            - 8889:8889
+        environment:
+            - TZ=Asia/Shanghai
+            - CONFIG_PATH=/config/config.json
+            - ADMIN_USERNAME=admin
+            - ADMIN_PASSWORD=admin123
+            - SECRET_KEY=change_this_in_production_to_random_string
+        volumes:
+            - ./shared:/config

@@ -1,0 +1,380 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">基本配置</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('update_basic_config') }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="USE_MODELSCOPE" name="USE_MODELSCOPE" value="1" {% if config.get('USE_MODELSCOPE') == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="USE_MODELSCOPE">启用 ModelScope</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="PDF2ZH_LANG_FROM" class="form-label">源语言</label>
+                            <select class="form-select" id="PDF2ZH_LANG_FROM" name="PDF2ZH_LANG_FROM">
+                                <option value="English" {% if config.get('PDF2ZH_LANG_FROM') == 'English' %}selected{% endif %}>英语</option>
+                                <option value="Chinese" {% if config.get('PDF2ZH_LANG_FROM') == 'Chinese' %}selected{% endif %}>中文</option>
+                                <option value="French" {% if config.get('PDF2ZH_LANG_FROM') == 'French' %}selected{% endif %}>法语</option>
+                                <option value="German" {% if config.get('PDF2ZH_LANG_FROM') == 'German' %}selected{% endif %}>德语</option>
+                                <option value="Japanese" {% if config.get('PDF2ZH_LANG_FROM') == 'Japanese' %}selected{% endif %}>日语</option>
+                                <option value="Korean" {% if config.get('PDF2ZH_LANG_FROM') == 'Korean' %}selected{% endif %}>韩语</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="PDF2ZH_LANG_TO" class="form-label">目标语言</label>
+                            <select class="form-select" id="PDF2ZH_LANG_TO" name="PDF2ZH_LANG_TO">
+                                <option value="Simplified Chinese" {% if config.get('PDF2ZH_LANG_TO') == 'Simplified Chinese' %}selected{% endif %}>简体中文</option>
+                                <option value="Traditional Chinese" {% if config.get('PDF2ZH_LANG_TO') == 'Traditional Chinese' %}selected{% endif %}>繁体中文</option>
+                                <option value="English" {% if config.get('PDF2ZH_LANG_TO') == 'English' %}selected{% endif %}>英语</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="NOTO_FONT_PATH" class="form-label">字体路径</label>
+                        <input type="text" class="form-control" id="NOTO_FONT_PATH" name="NOTO_FONT_PATH" value="{{ config.get('NOTO_FONT_PATH', './LXGWWenKai-Regular.ttf') }}">
+                        <div class="form-text">推荐使用 <a href="https://github.com/lxgw/LxgwWenKai/releases/download/v1.510/LXGWWenKai-Regular.ttf" target="_blank">霞鹜文楷字体</a></div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">保存基本配置</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">翻译服务配置</h5>
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addTranslatorModal">
+                    添加翻译服务
+                </button>
+            </div>
+            <div class="card-body">
+                {% if config.get('translators') %}
+                    <div class="accordion" id="translatorsAccordion">
+                        {% for translator in config.get('translators', []) %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                                        {{ translator.get('name', '未命名') }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#translatorsAccordion">
+                                    <div class="accordion-body">
+                                        <form method="post" action="{{ url_for('update_translator', translator_name=translator.get('name')) }}">
+                                            {% if translator.get('envs') %}
+                                                {% for env_key, env_value in translator.get('envs', {}).items() %}
+                                                    <div class="row mb-3 env-row">
+                                                        <div class="col-md-5">
+                                                            <input type="text" class="form-control env-key" name="env_key_{{ loop.index }}" value="{{ env_key }}" placeholder="环境变量名称">
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                            <input type="text" class="form-control env-value" name="env_value_{{ loop.index }}" value="{{ env_value }}" placeholder="环境变量值" {% if 'API_KEY' in env_key %}autocomplete="off"{% endif %}>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <button type="button" class="btn btn-danger remove-env">删除</button>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                            <div class="row mb-3">
+                                                <div class="col-12">
+                                                    <button type="button" class="btn btn-secondary add-env">添加环境变量</button>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <button type="submit" class="btn btn-primary">更新配置</button>
+                                                </div>
+                                                <div class="col-6 text-end">
+                                                    <form method="post" action="{{ url_for('delete_translator', translator_name=translator.get('name')) }}" class="d-inline">
+                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('确定要删除此翻译服务吗？')">删除</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        尚未配置任何翻译服务，请点击"添加翻译服务"按钮进行配置。
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">配置历史</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>文件名</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                                <tr>
+                                    <td>{{ item.datetime }}</td>
+                                    <td>{{ item.filename }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary view-backup" data-path="{{ item.path }}">查看</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-info">
+                        尚无配置历史记录。
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加翻译服务模态框 -->
+<div class="modal fade" id="addTranslatorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加翻译服务</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTranslatorForm" method="post" action="{{ url_for('add_translator') }}">
+                    <div class="mb-3">
+                        <label for="translator_name" class="form-label">翻译服务名称</label>
+                        <select class="form-select" id="translator_name" name="translator_name">
+                            <option value="">请选择...</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="gemini">Google Gemini</option>
+                            <option value="zhipu">智谱 AI</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="qwen-mt">阿里通义千问</option>
+                            <option value="ollama">Ollama</option>
+                            <option value="silicon">Silicon</option>
+                            <option value="custom">自定义服务</option>
+                        </select>
+                    </div>
+                    <div id="customNameContainer" class="mb-3" style="display: none;">
+                        <label for="custom_name" class="form-label">自定义服务名称</label>
+                        <input type="text" class="form-control" id="custom_name" placeholder="请输入自定义服务名称">
+                    </div>
+                    <div id="envContainer">
+                        <!-- 这里将动态添加环境变量输入框 -->
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-secondary add-env-modal">添加环境变量</button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="submitAddTranslator">确认添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查看历史配置模态框 -->
+<div class="modal fade" id="viewBackupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">历史配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="backupContent" class="bg-light p-3" style="max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // 处理自定义服务名称
+        $('#translator_name').change(function() {
+            if ($(this).val() === 'custom') {
+                $('#customNameContainer').show();
+            } else {
+                $('#customNameContainer').hide();
+            }
+            
+            // 根据选择的翻译服务预填充环境变量
+            updateEnvFields();
+        });
+        
+        // 添加环境变量按钮 - 模态框
+        $('.add-env-modal').click(function() {
+            addEnvFieldToModal();
+        });
+        
+        // 添加环境变量按钮 - 编辑表单
+        $('.add-env').click(function() {
+            var container = $(this).closest('form').find('.env-row').last();
+            var newRow = $('<div class="row mb-3 env-row"></div>');
+            var index = container.length ? parseInt(container.find('.env-key').attr('name').replace('env_key_', '')) + 1 : 1;
+            
+            newRow.html(`
+                <div class="col-md-5">
+                    <input type="text" class="form-control env-key" name="env_key_${index}" placeholder="环境变量名称">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control env-value" name="env_value_${index}" placeholder="环境变量值">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger remove-env">删除</button>
+                </div>
+            `);
+            
+            $(this).closest('.row').before(newRow);
+            bindRemoveEvent();
+        });
+        
+        // 绑定删除环境变量按钮事件
+        function bindRemoveEvent() {
+            $('.remove-env').off('click').on('click', function() {
+                $(this).closest('.env-row').remove();
+            });
+        }
+        
+        // 初始绑定删除按钮事件
+        bindRemoveEvent();
+        
+        // 提交添加翻译服务表单
+        $('#submitAddTranslator').click(function() {
+            // 处理自定义服务名称
+            if ($('#translator_name').val() === 'custom') {
+                var customName = $('#custom_name').val();
+                if (customName) {
+                    // 创建并追加一个隐藏的输入框，用于提交自定义名称
+                    $('#addTranslatorForm').append(`<input type="hidden" name="translator_name" value="${customName}">`);
+                } else {
+                    alert('请输入自定义服务名称');
+                    return;
+                }
+            }
+            
+            $('#addTranslatorForm').submit();
+        });
+        
+        // 查看备份配置
+        $('.view-backup').click(function() {
+            var path = $(this).data('path');
+            // 这里应该发送请求获取备份内容，然后显示在模态框中
+            $('#backupContent').text('正在加载...');
+            $('#viewBackupModal').modal('show');
+            
+            // 模拟获取备份内容的请求
+            setTimeout(function() {
+                $('#backupContent').text(JSON.stringify({
+                    "备份内容": "这里将显示实际的备份内容"
+                }, null, 4));
+            }, 500);
+        });
+        
+        // 根据选择的翻译服务预填充环境变量
+        function updateEnvFields() {
+            $('#envContainer').empty();
+            
+            var service = $('#translator_name').val();
+            var fields = [];
+            
+            switch(service) {
+                case 'openai':
+                    fields = [
+                        {key: 'OPENAI_BASE_URL', value: 'https://api.openai.com/v1', placeholder: 'OpenAI API 地址'},
+                        {key: 'OPENAI_API_KEY', value: '', placeholder: '输入您的 OpenAI API Key'},
+                        {key: 'OPENAI_MODEL', value: 'gpt-4o-mini', placeholder: '模型名称，如 gpt-4o-mini'}
+                    ];
+                    break;
+                case 'gemini':
+                    fields = [
+                        {key: 'GEMINI_API_KEY', value: '', placeholder: '输入您的 Google Gemini API Key'},
+                        {key: 'GEMINI_MODEL', value: 'gemini-1.5-flash', placeholder: '模型名称，如 gemini-1.5-flash'}
+                    ];
+                    break;
+                case 'zhipu':
+                    fields = [
+                        {key: 'ZHIPU_API_KEY', value: '', placeholder: '输入您的智谱 API Key'},
+                        {key: 'ZHIPU_MODEL', value: 'glm-4-flash', placeholder: '模型名称，如 glm-4-flash'}
+                    ];
+                    break;
+                case 'qwen-mt':
+                    fields = [
+                        {key: 'ALI_MODEL', value: 'qwen-max-2025-01-25', placeholder: '模型名称'},
+                        {key: 'ALI_API_KEY', value: '', placeholder: '输入您的阿里云 API Key'},
+                        {key: 'ALI_DOMAINS', value: 'scientific paper', placeholder: '领域，如 scientific paper'}
+                    ];
+                    break;
+                case 'ollama':
+                    fields = [
+                        {key: 'OLLAMA_HOST', value: 'http://127.0.0.1:11434', placeholder: 'Ollama 服务地址'},
+                        {key: 'OLLAMA_MODEL', value: 'qwen2.5:7b', placeholder: '模型名称，如 qwen2.5:7b'}
+                    ];
+                    break;
+                case 'custom':
+                    addEnvFieldToModal();
+                    return;
+            }
+            
+            fields.forEach(function(field, index) {
+                addEnvFieldToModal(field.key, field.value, field.placeholder);
+            });
+        }
+        
+        // 添加环境变量字段到模态框
+        function addEnvFieldToModal(key = '', value = '', placeholder = '') {
+            var index = $('#envContainer .env-row').length + 1;
+            var row = $('<div class="row mb-3 env-row"></div>');
+            
+            row.html(`
+                <div class="col-md-5">
+                    <input type="text" class="form-control env-key" name="env_key_${index}" value="${key}" placeholder="环境变量名称">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control env-value" name="env_value_${index}" value="${value}" placeholder="${placeholder || '环境变量值'}" ${key.includes('API_KEY') ? 'autocomplete="off"' : ''}>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger remove-env-modal">删除</button>
+                </div>
+            `);
+            
+            $('#envContainer').append(row);
+            
+            // 绑定删除事件
+            $('.remove-env-modal').off('click').on('click', function() {
+                $(this).closest('.env-row').remove();
+            });
+        }
+    });
+</script>
+{% endblock %}
