@@ -16,7 +16,7 @@ services:
         volumes:
             - ./shared/translated:/app/translated
             - ./shared/config.json:/app/config.json
-            # - ./shared/LXGWWenKai-Regular.ttf:/app/LXGWWenKai-Regular.ttf
+            - ./shared/LXGWWenKai-Regular.ttf:/app/LXGWWenKai-Regular.ttf
         depends_on:
             - config-manager
 
