@@ -66,19 +66,13 @@ def load_user(user_id):
 
 # 加密敏感数据
 def encrypt_api_key(api_key):
-    if not api_key:
-        return None
-    return cipher_suite.encrypt(api_key.encode()).decode()
+    # 不再加密，直接返回原始值
+    return api_key
 
 # 解密敏感数据
 def decrypt_api_key(encrypted_api_key):
-    if not encrypted_api_key:
-        return None
-    try:
-        return cipher_suite.decrypt(encrypted_api_key.encode()).decode()
-    except Exception as e:
-        logger.error(f"解密失败: {e}")
-        return None
+    # 不再解密，直接返回原始值
+    return encrypted_api_key
 
 # 读取配置文件
 def read_config():
@@ -99,16 +93,6 @@ def read_config():
         
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
-            
-            # 解密API密钥
-            if 'translators' in config:
-                for translator in config['translators']:
-                    if 'envs' in translator:
-                        for key in translator['envs']:
-                            if 'API_KEY' in key and translator['envs'][key].startswith('enc:'):
-                                encrypted_key = translator['envs'][key][4:]  # 移除 'enc:' 前缀
-                                translator['envs'][key] = decrypt_api_key(encrypted_key)
-            
             return config
     except Exception as e:
         logger.error(f"读取配置文件失败: {e}")
@@ -118,18 +102,6 @@ def read_config():
 def save_config(config):
     config_path = app.config['CONFIG_PATH']
     try:
-        # 创建一个没有加密API密钥的副本用于原始应用
-        raw_config = copy.deepcopy(config)
-        
-        # 加密API密钥(仅对管理界面配置)
-        if 'translators' in config:
-            for translator in config['translators']:
-                if 'envs' in translator:
-                    for key in translator['envs']:
-                        if 'API_KEY' in key and translator['envs'][key] and not translator['envs'][key].startswith('enc:'):
-                            encrypted_key = encrypt_api_key(translator['envs'][key])
-                            translator['envs'][key] = f"enc:{encrypted_key}"
-        
         # 创建备份
         if os.path.exists(config_path):
             backup_path = f"{config_path}.bak.{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -140,14 +112,9 @@ def save_config(config):
             except Exception as be:
                 logger.error(f"创建配置备份失败: {be}")
         
-        # 保存新配置(加密版)
+        # 保存新配置(明文)
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
-            
-        # 保存原始版本(不加密)供原始应用使用
-        raw_path = os.path.join(os.path.dirname(config_path), 'raw_config.json')
-        with open(raw_path, 'w', encoding='utf-8') as f:
-            json.dump(raw_config, f, ensure_ascii=False, indent=4)
         
         return True
     except Exception as e:
