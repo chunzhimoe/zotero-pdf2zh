@@ -5,7 +5,6 @@ import os
 import json
 import yaml
 import logging
-from datetime import datetime
 import requests
 import subprocess
 import tempfile
@@ -13,6 +12,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.fernet import Fernet
+import copy
+from datetime import datetime
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, 
@@ -117,7 +118,10 @@ def read_config():
 def save_config(config):
     config_path = app.config['CONFIG_PATH']
     try:
-        # 加密API密钥
+        # 创建一个没有加密API密钥的副本用于原始应用
+        raw_config = copy.deepcopy(config)
+        
+        # 加密API密钥(仅对管理界面配置)
         if 'translators' in config:
             for translator in config['translators']:
                 if 'envs' in translator:
@@ -136,9 +140,14 @@ def save_config(config):
             except Exception as be:
                 logger.error(f"创建配置备份失败: {be}")
         
-        # 保存新配置
+        # 保存新配置(加密版)
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
+            
+        # 保存原始版本(不加密)供原始应用使用
+        raw_path = os.path.join(os.path.dirname(config_path), 'raw_config.json')
+        with open(raw_path, 'w', encoding='utf-8') as f:
+            json.dump(raw_config, f, ensure_ascii=False, indent=4)
         
         return True
     except Exception as e:

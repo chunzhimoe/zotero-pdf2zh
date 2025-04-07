@@ -24,7 +24,7 @@ class PDFTranslator:
         'service': 'bing',
         'threadNum': 4,
         'outputPath': './translated/',
-        'configPath': './config.json',
+        'configPath': '/app/config.json',  # 使用绝对路径
         'sourceLang': 'en',
         'targetLang': 'zh'
     }
