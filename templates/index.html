@@ -83,6 +83,9 @@
                                                         </div>
                                                         <div class="col-md-2">
                                                             <button type="button" class="btn btn-danger remove-env">删除</button>
+                                                            {% if 'API_KEY' in env_key and 'OPENAI' in env_key %}
+                                                            <button type="button" class="btn btn-info mt-2 test-api-key" data-key="{{ env_value }}" data-service="openai">测试</button>
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 {% endfor %}
@@ -365,6 +368,9 @@
                 </div>
                 <div class="col-md-2">
                     <button type="button" class="btn btn-danger remove-env-modal">删除</button>
+                    {% if 'API_KEY' in key and 'OPENAI' in key %}
+                    <button type="button" class="btn btn-info mt-2 test-api-key" data-key="${value}" data-service="openai">测试</button>
+                    {% endif %}
                 </div>
             `);
             
@@ -375,6 +381,81 @@
                 $(this).closest('.env-row').remove();
             });
         }
+        
+        // 处理API测试按钮
+        $(document).on('click', '.test-api-key', function() {
+            const apiKey = $(this).data('key');
+            const service = $(this).data('service');
+            const $button = $(this);
+            
+            $button.prop('disabled', true).text('测试中...');
+            
+            // 对于OpenAI服务，添加基础URL和模型参数
+            let testData = {
+                service_type: service,
+                api_key: apiKey
+            };
+            
+            if (service === 'openai') {
+                testData.base_url = 'https://api.openai.com/v1';
+                testData.model = 'gpt-3.5-turbo';
+            }
+            
+            // 发送API测试请求
+            $.ajax({
+                url: '/api/test_connection',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(testData),
+                success: function(response) {
+                    $button.prop('disabled', false).text('测试');
+                    
+                    let resultHtml = '';
+                    if (response.status === 'success') {
+                        resultHtml = `
+                            <div class="alert alert-success mt-2">
+                                <strong>测试成功!</strong><br>
+                                模型: ${response.model || '未知'}<br>
+                                响应: ${response.response || '无响应内容'}
+                            </div>
+                        `;
+                    } else {
+                        resultHtml = `
+                            <div class="alert alert-danger mt-2">
+                                <strong>测试失败!</strong><br>
+                                错误: ${response.message || '未知错误'}
+                                ${response.details ? '<br>详情: ' + JSON.stringify(response.details) : ''}
+                            </div>
+                        `;
+                    }
+                    
+                    // 移除之前的结果并添加新结果
+                    $button.parent().find('.api-test-result').remove();
+                    $button.after($(resultHtml).addClass('api-test-result'));
+                },
+                error: function(xhr, status, error) {
+                    $button.prop('disabled', false).text('测试');
+                    let errorMsg = '请求失败';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg = response.message || errorMsg;
+                    } catch (e) {
+                        errorMsg += ': ' + error;
+                    }
+                    
+                    const resultHtml = `
+                        <div class="alert alert-danger mt-2">
+                            <strong>测试失败!</strong><br>
+                            错误: ${errorMsg}
+                        </div>
+                    `;
+                    
+                    // 移除之前的结果并添加新结果
+                    $button.parent().find('.api-test-result').remove();
+                    $button.after($(resultHtml).addClass('api-test-result'));
+                }
+            });
+        });
     });
 </script>
 {% endblock %}
